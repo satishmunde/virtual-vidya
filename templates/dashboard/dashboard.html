@@ -1,0 +1,1081 @@
+{% extends 'layout/layout.html' %}
+{% load static %}
+
+{% block title %}
+Dashboard | Virtual Vidya
+{% endblock title %}
+
+{% block content %}
+{% if user.is_authenticated %}
+<div class="flex h-screen bg-gray-100 dark:bg-gray-900">
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-30">
+        <div class="p-4 flex items-center justify-between">
+            <a href="/" class="flex items-center">
+                <img src="{% static 'images/logo.svg' %}" alt="logo" class="w-8 h-8 mr-2">
+                <span class="text-xl font-semibold text-gray-900 dark:text-white">Virtual Vidya</span>
+            </a>
+            <button id="sidebar-toggle" class="md:hidden text-gray-500 dark:text-gray-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <nav class="mt-4">
+            <a href="#" data-view="dashboard" class="block py-2 px-4 text-gray-700 dark:text-gray-200 bg-blue-100 dark:bg-blue-700 text-blue-600 dark:text-blue-300 font-medium active-nav">Dashboard</a>
+            <a href="#" data-view="my-classrooms" class="block py-2 px-4 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-600 hover:text-blue-600 dark:hover:text-blue-300">My Classrooms</a>
+            <a href="#" data-view="assignments" class="block py-2 px-4 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-600 hover:text-blue-600 dark:hover:text-blue-300">Assignments</a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col md:ml-64">
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 shadow p-4 flex items-center justify-between">
+            <button id="mobile-sidebar-toggle" class="md:hidden text-gray-500 dark:text-gray-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+            <div class="flex items-center">
+                <img id="profile-picture" src="" alt="Profile" class="w-10 h-10 rounded-full mr-2 hidden" aria-hidden="true">
+                <span id="user-name" class="text-gray-900 dark:text-white font-medium"></span>
+            </div>
+            <form action="{% url 'logout' %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" id="logout" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Logout</button>
+            </form>
+        </header>
+
+        <!-- Content Area -->
+        <main class="flex-1 p-6 overflow-y-auto">
+            <!-- Feedback Messages -->
+            <div id="feedback" class="hidden fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white"></div>
+
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Welcome to Your Dashboard</h1>
+                <p id="welcome-message" class="text-gray-600 dark:text-gray-300 mb-6"></p>
+                {% if user.user_type == 'teacher' %}
+                    <button id="create-classroom-button" class="mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create New Classroom</button>
+                {% endif %}
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Classrooms</h2>
+                <div id="recent-classrooms" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"></div>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Notes</h2>
+                <div id="recent-notes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
+            <!-- My Classrooms View -->
+            <div id="my-classrooms-view" class="view hidden">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">My Classrooms</h1>
+                <div id="my-classrooms" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
+            <!-- Create Classroom Modal -->
+            <div id="create-classroom-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40" role="dialog" aria-labelledby="create-classroom-title">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+                    <h2 id="create-classroom-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Create Classroom</h2>
+                    <form id="create-classroom-form" class="space-y-4">
+                        {% csrf_token %}
+                        <div>
+                            <label for="classroom-name" class="block text-sm font-medium text-gray-900 dark:text-white">Classroom Name</label>
+                            <input type="text" id="classroom-name" name="name" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required minlength="3" maxlength="100" aria-required="true">
+                        </div>
+                        <div>
+                            <label for="classroom-description" class="block text-sm font-medium text-gray-900 dark:text-white">Description</label>
+                            <textarea id="classroom-description" name="description" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" maxlength="500"></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button type="button" id="cancel-create-classroom" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Classroom Detail View -->
+            <div id="classroom-detail-view" class="view hidden">
+                <h1 id="classroom-title" class="text-2xl font-bold text-gray-900 dark:text-white mb-4"></h1>
+                <p id="classroom-description" class="text-gray-600 dark:text-gray-300 mb-4"></p>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Notes</h2>
+                <div id="classroom-notes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"></div>
+                {% if user.user_type == 'teacher' %}
+                    <!-- Create Note Modal -->
+                    <div id="create-note-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40" role="dialog" aria-labelledby="create-note-title">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+                            <h2 id="create-note-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Post Note</h2>
+                            <form id="create-note-form" class="space-y-4">
+                                {% csrf_token %}
+                                <div>
+                                    <label for="note-title" class="block text-sm font-medium text-gray-900 dark:text-white">Note Title</label>
+                                    <input type="text" id="note-title" name="title" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required minlength="1" maxlength="100" aria-required="true">
+                                </div>
+                                <div>
+                                    <label for="note-content" class="block text-sm font-medium text-gray-900 dark:text-white">Content</label>
+                                    <textarea id="note-content" name="content" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required maxlength="2000" aria-required="true"></textarea>
+                                </div>
+                                <div>
+                                    <label for="note-file" class="block text-sm font-medium text-gray-900 dark:text-white">Upload File (Optional, max 5MB)</label>
+                                    <input type="file" id="note-file" name="file" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" accept=".pdf,.doc,.docx,.txt">
+                                </div>
+                                <div>
+                                    <label for="note-public" class="block text-sm font-medium text-gray-900 dark:text-white">Visibility</label>
+                                    <select id="note-public" name="is_public" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="true">Public</option>
+                                        <option value="false">Private</option>
+                                    </select>
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-create-note" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Post</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Assignments</h2>
+                <div id="classroom-assignments" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"></div>
+                {% if user.user_type == 'teacher' %}
+                    <!-- Create Assignment Modal -->
+                    <div id="create-assignment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40" role="dialog" aria-labelledby="create-assignment-title">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+                            <h2 id="create-assignment-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Create Assignment</h2>
+                            <form id="create-assignment-form" class="space-y-4">
+                                {% csrf_token %}
+                                <div>
+                                    <label for="assignment-title" class="block text-sm font-medium text-gray-900 dark:text-white">Assignment Title</label>
+                                    <input type="text" id="assignment-title" name="title" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required minlength="1" maxlength="100" aria-required="true">
+                                </div>
+                                <div>
+                                    <label for="assignment-description" class="block text-sm font-medium text-gray-900 dark:text-white">Description</label>
+                                    <textarea id="assignment-description" name="description" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required maxlength="2000" aria-required="true"></textarea>
+                                </div>
+                                <div>
+                                    <label for="assignment-due-date" class="block text-sm font-medium text-gray-900 dark:text-white">Due Date</label>
+                                    <input type="datetime-local" id="assignment-due-date" name="due_date" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required aria-required="true">
+                                </div>
+                                <div>
+                                    <label for="assignment-max-points" class="block text-sm font-medium text-gray-900 dark:text-white">Max Points</label>
+                                    <input type="number" id="assignment-max-points" name="max_points" min="1" max="1000" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required aria-required="true">
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-create-assignment" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+                <div id="submissions-section" class="hidden">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Submissions</h2>
+                    <div id="classroom-submissions" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+                {% if user.user_type == 'student' %}
+                    <!-- Submit Assignment Modal -->
+                    <div id="submit-assignment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40" role="dialog" aria-labelledby="submit-assignment-title">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+                            <h2 id="submit-assignment-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Submit Assignment</h2>
+                            <form id="submit-assignment-form" class="space-y-4">
+                                {% csrf_token %}
+                                <div>
+                                    <label for="submission-content" class="block text-sm font-medium text-gray-900 dark:text-white">Submission Content</label>
+                                    <textarea id="submission-content" name="content" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required maxlength="2000" aria-required="true"></textarea>
+                                </div>
+                                <div>
+                                    <label for="submission-file" class="block text-sm font-medium text-gray-900 dark:text-white">Upload File (Optional, max 5MB)</label>
+                                    <input type="file" id="submission-file" name="file" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" accept=".pdf,.doc,.docx,.txt">
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-submit-assignment" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Submit</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if user.user_type == 'teacher' %}
+                    <!-- Grade Submission Modal -->
+                    <div id="grade-submission-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40" role="dialog" aria-labelledby="grade-submission-title">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+                            <h2 id="grade-submission-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Grade Submission</h2>
+                            <form id="grade-submission-form" class="space-y-4">
+                                {% csrf_token %}
+                                <div>
+                                    <label for="submission-grade" class="block text-sm font-medium text-gray-900 dark:text-white">Grade</label>
+                                    <input type="number" id="submission-grade" name="grade" min="0" step="0.1" max="1000" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required aria-required="true">
+                                </div>
+                                <div>
+                                    <label for="submission-feedback" class="block text-sm font-medium text-gray-900 dark:text-white">Feedback (Optional)</label>
+                                    <textarea id="submission-feedback" name="feedback" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" maxlength="2000"></textarea>
+                                </div>
+                                <div class="flex justify-end space-x-2">
+                                    <button type="button" id="cancel-grade-submission" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Submit Grade</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Assignments View -->
+            <div id="assignments-view" class="view hidden">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Assignments</h1>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Select a Classroom</h2>
+                <div id="assignment-classrooms" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"></div>
+                <div id="assignments-list" class="hidden">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Classroom Assignments</h2>
+                    <div id="classroom-assignments-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"></div>
+                </div>
+                <div id="submissions-list" class="hidden">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Assignment Submissions</h2>
+                    <div id="assignment-submissions" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let userRole = '';
+
+    // Get CSRF token from cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Show feedback message
+    function showFeedback(message, type = 'success') {
+        const feedback = document.getElementById('feedback');
+        if (feedback) {
+            feedback.textContent = message;
+            feedback.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+            feedback.classList.remove('hidden');
+            setTimeout(() => feedback.classList.add('hidden'), 3000);
+        } else {
+            console.error('Feedback element not found');
+        }
+    }
+
+    // Validate file size
+    function validateFile(file) {
+        if (file && file.size > 5 * 1024 * 1024) { // 5MB limit
+            showFeedback('File size must not exceed 5MB', 'error');
+            return false;
+        }
+        return true;
+    }
+
+    // Fetch user profile
+    async function fetchProfile() {
+        try {
+            const response = await fetch('/api/core/profile/', {
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if (!response.ok) throw new Error(`Profile fetch failed: ${response.status}`);
+            const user = await response.json();
+            const userName = document.getElementById('user-name');
+            if (userName) {
+                userName.textContent = `${user.first_name} ${user.last_name}`;
+            } else {
+                console.error('User name element not found');
+            }
+            if (user.profile_picture) {
+                const profilePicture = document.getElementById('profile-picture');
+                if (profilePicture) {
+                    profilePicture.src = user.profile_picture;
+                    profilePicture.classList.remove('hidden');
+                }
+            }
+            userRole = user.user_type;
+            const welcomeMessage = document.getElementById('welcome-message');
+            if (welcomeMessage) {
+                welcomeMessage.textContent = `Welcome, ${userRole.charAt(0).toUpperCase() + userRole.slice(1)}! Manage your classrooms, notes, and assignments below.`;
+            }
+        } catch (error) {
+            console.error('Profile fetch error:', error);
+            showFeedback('Failed to load profile', 'error');
+            window.location.href = '/login/';
+        }
+    }
+
+    // Fetch classrooms
+    async function fetchClassrooms(containerId) {
+        try {
+            const response = await fetch('/api/classrooms/', {
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if (!response.ok) throw new Error(`Classrooms fetch failed: ${response.status}`);
+            const classrooms = await response.json();
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error(`Container with ID ${containerId} not found`);
+                return;
+            }
+            container.innerHTML = classrooms.length ? classrooms.map(classroom => `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${classroom.name}</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Code: ${classroom.code}</p>
+                    <p class="text-gray-600 dark:text-gray-300">Teacher: ${classroom.teacher.first_name} ${classroom.teacher.last_name}</p>
+                    <div class="mt-4 flex space-x-3">
+                        <button onclick="viewClassroom(${classroom.id})" class="text-blue-600 hover:underline font-medium">View</button>
+                        ${containerId === 'assignment-classrooms' ? `
+                            <button onclick="viewClassroomAssignments(${classroom.id})" class="text-blue-600 hover:underline font-medium">View Assignments</button>
+                        ` : ''}
+                        ${userRole === 'teacher' ? `
+                            <button onclick="editClassroom(${classroom.id})" class="text-blue-600 hover:underline font-medium">Edit</button>
+                            <button onclick="deleteClassroom(${classroom.id})" class="text-red-600 hover:underline font-medium">Delete</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('') : '<p class="text-gray-600 dark:text-gray-300">No classrooms found.</p>';
+        } catch (error) {
+            console.error('Classrooms fetch error:', error);
+            showFeedback('Failed to load classrooms', 'error');
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = '<p class="text-gray-600 dark:text-gray-300">Failed to load classrooms.</p>';
+            }
+        }
+    }
+
+    // Fetch notes
+    async function fetchNotes(classroomId, containerId) {
+        try {
+            const url = classroomId ? `/api/notes/?classroom_id=${classroomId}` : '/api/notes/';
+            const response = await fetch(url, {
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if (!response.ok) throw new Error(`Notes fetch failed: ${response.status}`);
+            const notes = await response.json();
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error(`Container with ID ${containerId} not found`);
+                return;
+            }
+            container.innerHTML = notes.length ? notes.map(note => `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${note.title}</h3>
+                    <p class="text-gray-600 dark:text-gray-300 truncate">${note.content}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">${new Date(note.created_at).toLocaleDateString()}</p>
+                    ${note.file ? `
+                        <a href="${note.file}" target="_blank" class="text-blue-600 hover:underline mr-2">View File</a>
+                        <a href="${note.file}" download class="text-blue-600 hover:underline">Download</a>
+                    ` : ''}
+                    <div class="mt-4">
+                        <button onclick="showNoteModal('${note.title}', '${note.content.replace(/'/g, "\\'")}', '${note.file || ''}')" class="text-blue-600 hover:underline font-medium">View</button>
+                    </div>
+                </div>
+            `).join('') : '<p class="text-gray-600 dark:text-gray-300">No notes available.</p>';
+        } catch (error) {
+            console.error('Notes fetch error:', error);
+            showFeedback('Failed to load notes', 'error');
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = '<p class="text-gray-600 dark:text-gray-300">Failed to load notes.</p>';
+            }
+        }
+    }
+
+    // Fetch assignments
+    async function fetchAssignments(classroomId, containerId) {
+        try {
+            const url = classroomId ? `/api/assignments/?classroom_id=${classroomId}` : '/api/assignments/';
+            const response = await fetch(url, {
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if (!response.ok) throw new Error(`Assignments fetch failed: ${response.status}`);
+            const assignments = await response.json();
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error(`Container with ID ${containerId} not found`);
+                showFeedback('Failed to load assignments: Container not found', 'error');
+                return;
+            }
+            container.innerHTML = ''; // Clear container before rendering
+            if (!assignments.length) {
+                container.innerHTML = '<p class="text-gray-600 dark:text-gray-300">No assignments available.</p>';
+                return;
+            }
+
+            const assignmentHtmlPromises = assignments.map(async assignment => {
+                let submissionHtml = '';
+                if (userRole === 'student') {
+                    const submission = await fetchStudentSubmission(assignment.id);
+                    if (submission) {
+                        submissionHtml = `
+                            <div class="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Your Submission:</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 truncate">${submission.content}</p>
+                                ${submission.file ? `<a href="${submission.file}" target="_blank" class="text-blue-600 hover:underline">View File</a>` : ''}
+                                <button onclick="deleteSubmission(${submission.id}, ${assignment.id}, '${containerId}')" class="text-red-600 hover:underline font-medium ml-2">Delete Submission</button>
+                            </div>
+                        `;
+                    }
+                }
+                return `
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${assignment.title}</h3>
+                        <p class="text-gray-600 dark:text-gray-300 truncate">${assignment.description}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Due: ${new Date(assignment.due_date).toLocaleString()}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Points: ${assignment.max_points}</p>
+                        ${submissionHtml}
+                        <div class="mt-4 flex space-x-3">
+                            ${userRole === 'student' ? `
+                                <button onclick="showSubmissionForm(${assignment.id})" class="text-blue-600 hover:underline font-medium">Submit</button>
+                            ` : ''}
+                            ${userRole === 'teacher' ? `
+                                <button onclick="viewSubmissions(${assignment.id}, '${containerId}')" class="text-blue-600 hover:underline font-medium">View Submissions</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            const assignmentHtmls = await Promise.all(assignmentHtmlPromises);
+            container.innerHTML = assignmentHtmls.join('');
+        } catch (error) {
+            console.error('Assignments fetch error:', error);
+            showFeedback(`Failed to load assignments: ${error.message}`, 'error');
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = '<p class="text-gray-600 dark:text-gray-300">Failed to load assignments.</p>';
+            }
+        }
+    }
+
+    // Fetch student's submission for an assignment
+    async function fetchStudentSubmission(assignmentId) {
+        try {
+            const response = await fetch(`/api/submissions/?assignment_id=${assignmentId}&student=true`, {
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if (!response.ok) throw new Error(`Student submission fetch failed: ${response.status}`);
+            const submissions = await response.json();
+            return submissions.length > 0 ? submissions[0] : null;
+        } catch (error) {
+            console.error('Student submission fetch error:', error);
+            return null;
+        }
+    }
+
+    // Delete submission
+    window.deleteSubmission = async function(submissionId, assignmentId, containerId) {
+        if (!confirm('Are you sure you want to delete this submission?')) return;
+        try {
+            const response = await fetch(`/api/submissions/${submissionId}/`, {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if (!response.ok) throw new Error(`Delete submission failed: ${response.status}`);
+            showFeedback('Submission deleted successfully');
+            fetchAssignments(assignmentId, containerId);
+        } catch (error) {
+            console.error('Delete submission error:', error);
+            showFeedback('Failed to delete submission', 'error');
+        }
+    }
+
+    // Fetch submissions
+    async function fetchSubmissions(assignmentId, containerId) {
+        try {
+            if (!assignmentId) throw new Error('Invalid assignment ID');
+            const response = await fetch(`/api/submissions/?assignment_id=${assignmentId}`, {
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if (!response.ok) throw new Error(`Submissions fetch failed: ${response.status}`);
+            const submissions = await response.json();
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error(`Container with ID ${containerId} not found`);
+                showFeedback('Failed to load submissions: Container not found', 'error');
+                return;
+            }
+            container.innerHTML = ''; // Clear container before rendering
+            container.dataset.assignmentId = assignmentId;
+            container.innerHTML = submissions.length ? submissions.map(submission => `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                    <p class="text-gray-600 dark:text-gray-300">Student: ${submission.student.first_name} ${submission.student.last_name}</p>
+                    <p class="text-gray-600 dark:text-gray-300 truncate">${submission.content}</p>
+                    ${submission.file ? `<a href="${submission.file}" target="_blank" class="text-blue-600 hover:underline">View File</a>` : ''}
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Submitted: ${new Date(submission.submitted_at).toLocaleString()}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Grade: ${submission.grade || 'Not graded'}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Feedback: ${submission.feedback || 'None'}</p>
+                    <div class="mt-4 flex space-x-3">
+                        ${userRole === 'teacher' ? `
+                            <button onclick="showGradeSubmission(${submission.id})" class="text-blue-600 hover:underline font-medium">Grade</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('') : '<p class="text-gray-600 dark:text-gray-300">No submissions available.</p>';
+
+            if (containerId === 'assignment-submissions') {
+                const submissionsList = document.getElementById('submissions-list');
+                if (submissionsList) submissionsList.classList.remove('hidden');
+            } else if (containerId === 'classroom-submissions') {
+                const submissionsSection = document.getElementById('submissions-section');
+                if (submissionsSection) submissionsSection.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Submissions fetch error:', error);
+            showFeedback(`Failed to load submissions: ${error.message}`, 'error');
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = '<p class="text-gray-600 dark:text-gray-300">Failed to load submissions.</p>';
+            }
+        }
+    }
+
+    // View classroom
+    window.viewClassroom = async function(id) {
+        try {
+            if (!id) throw new Error('Invalid classroom ID');
+            const response = await fetch(`/api/classrooms/${id}/`, {
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if (!response.ok) throw new Error(`Classroom fetch failed: ${response.status}`);
+            const classroom = await response.json();
+            const titleElement = document.getElementById('classroom-title');
+            const descriptionElement = document.getElementById('classroom-description');
+            const noteForm = document.getElementById('create-note-form');
+            const assignmentForm = document.getElementById('create-assignment-form');
+
+            if (!titleElement || !descriptionElement) {
+                console.error('Required DOM elements not found');
+                showFeedback('Failed to load classroom interface', 'error');
+                return;
+            }
+
+            titleElement.textContent = classroom.name;
+            descriptionElement.textContent = classroom.description || 'No description provided.';
+            if (noteForm) noteForm.dataset.classroomId = id;
+            if (assignmentForm) assignmentForm.dataset.classroomId = id;
+
+            fetchNotes(id, 'classroom-notes');
+            fetchAssignments(id, 'classroom-assignments');
+
+            const submissionsSection = document.getElementById('submissions-section');
+            if (submissionsSection) submissionsSection.classList.add('hidden');
+
+            switchView('classroom-detail');
+        } catch (error) {
+            console.error('Classroom fetch error:', error);
+            showFeedback(`Failed to load classroom: ${error.message}`, 'error');
+            switchView('my-classrooms');
+        }
+    }
+
+    // View classroom assignments
+    window.viewClassroomAssignments = async function(classroomId) {
+        try {
+            if (!classroomId) throw new Error('Invalid classroom ID');
+            const assignmentsList = document.getElementById('assignments-list');
+            if (!assignmentsList) {
+                console.error('Assignments list container not found');
+                return;
+            }
+            assignmentsList.classList.remove('hidden');
+            const submissionsList = document.getElementById('submissions-list');
+            if (submissionsList) submissionsList.classList.add('hidden');
+            fetchAssignments(classroomId, 'classroom-assignments-list');
+        } catch (error) {
+            console.error('View classroom assignments error:', error);
+            showFeedback('Failed to load assignments', 'error');
+        }
+    }
+
+    // Edit classroom
+    window.editClassroom = async function(id) {
+        try {
+            if (!id) throw new Error('Invalid classroom ID');
+            const response = await fetch(`/api/classrooms/${id}/`, {
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if (!response.ok) throw new Error(`Classroom fetch failed: ${response.status}`);
+            const classroom = await response.json();
+            const form = document.getElementById('create-classroom-form');
+            const nameInput = document.getElementById('classroom-name');
+            const descriptionInput = document.getElementById('classroom-description');
+
+            if (!form || !nameInput || !descriptionInput) {
+                console.error('Create classroom form elements not found');
+                showFeedback('Failed to load classroom form', 'error');
+                return;
+            }
+
+            nameInput.value = classroom.name;
+            descriptionInput.value = classroom.description || '';
+            form.dataset.id = id;
+            const modal = document.getElementById('create-classroom-modal');
+            if (modal) modal.classList.remove('hidden');
+        } catch (error) {
+            console.error('Edit classroom error:', error);
+            showFeedback('Failed to load classroom data', 'error');
+        }
+    }
+
+    // Delete classroom
+    window.deleteClassroom = async function(id) {
+        if (!confirm('Are you sure you want to delete this classroom?')) return;
+        try {
+            if (!id) throw new Error('Invalid classroom ID');
+            const response = await fetch(`/api/classrooms/${id}/`, {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            });
+            if (!response.ok) throw new Error(`Delete classroom failed: ${response.status}`);
+            showFeedback('Classroom deleted successfully');
+            fetchClassrooms('my-classrooms');
+            fetchClassrooms('recent-classrooms');
+            fetchClassrooms('assignment-classrooms');
+        } catch (error) {
+            console.error('Delete classroom error:', error);
+            showFeedback('Failed to delete classroom', 'error');
+        }
+    }
+
+    // Create classroom form submission
+    document.getElementById('create-classroom-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (userRole !== 'teacher') {
+            showFeedback('Only teachers can create classrooms', 'error');
+            return;
+        }
+        const formData = new FormData(e.target);
+        const name = formData.get('name')?.trim();
+        const description = formData.get('description')?.trim();
+        if (!name || name.length < 3) {
+            showFeedback('Classroom name must be at least 3 characters long', 'error');
+            return;
+        }
+        const data = { name, description };
+        try {
+            const method = e.target.dataset.id ? 'PUT' : 'POST';
+            const url = e.target.dataset.id ? `/api/classrooms/${e.target.dataset.id}/` : '/api/classrooms/';
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || error.name || `Failed to save classroom: ${response.status}`);
+            }
+            e.target.reset();
+            e.target.removeAttribute('data-id');
+            const modal = document.getElementById('create-classroom-modal');
+            if (modal) modal.classList.add('hidden');
+            showFeedback('Classroom saved successfully');
+            fetchClassrooms('recent-classrooms');
+            fetchClassrooms('my-classrooms');
+            switchView('dashboard');
+        } catch (error) {
+            console.error('Save classroom error:', error);
+            showFeedback(error.message.includes('exists') ? 'A classroom with this name already exists' : error.message, 'error');
+        }
+    });
+
+    // Create note form submission
+    document.getElementById('create-note-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (userRole !== 'teacher') {
+            showFeedback('Only teachers can post notes', 'error');
+            return;
+        }
+        const formData = new FormData(e.target);
+        const classroomId = e.target.dataset.classroomId;
+        formData.append('classroom', classroomId);
+        const title = formData.get('title')?.trim();
+        const content = formData.get('content')?.trim();
+        if (!title || !content) {
+            showFeedback('Title and content are required', 'error');
+            return;
+        }
+        const file = formData.get('file');
+        if (file && !validateFile(file)) return;
+        try {
+            const response = await fetch('/api/notes/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: formData
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || `Failed to create note: ${response.status}`);
+            }
+            e.target.reset();
+            const modal = document.getElementById('create-note-modal');
+            if (modal) modal.classList.add('hidden');
+            showFeedback('Note posted successfully');
+            fetchNotes(classroomId, 'classroom-notes');
+        } catch (error) {
+            console.error('Create note error:', error);
+            showFeedback(error.message, 'error');
+        }
+    });
+
+    // Create assignment form submission
+    document.getElementById('create-assignment-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (userRole !== 'teacher') {
+            showFeedback('Only teachers can create assignments', 'error');
+            return;
+        }
+        const formData = new FormData(e.target);
+        const classroomId = e.target.dataset.classroomId;
+        const title = formData.get('title')?.trim();
+        const description = formData.get('description')?.trim();
+        const dueDate = formData.get('due_date');
+        const maxPoints = parseInt(formData.get('max_points'));
+        if (!title || !description || !dueDate || !maxPoints) {
+            showFeedback('All fields are required', 'error');
+            return;
+        }
+        if (maxPoints < 1) {
+            showFeedback('Max points must be at least 1', 'error');
+            return;
+        }
+        const data = {
+            classroom: classroomId,
+            title,
+            description,
+            due_date: dueDate,
+            max_points: maxPoints
+        };
+        try {
+            const response = await fetch('/api/assignments/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || `Failed to create assignment: ${response.status}`);
+            }
+            e.target.reset();
+            const modal = document.getElementById('create-assignment-modal');
+            if (modal) modal.classList.add('hidden');
+            showFeedback('Assignment created successfully');
+            fetchAssignments(classroomId, 'classroom-assignments');
+            fetchAssignments(classroomId, 'classroom-assignments-list');
+        } catch (error) {
+            console.error('Create assignment error:', error);
+            showFeedback(error.message, 'error');
+        }
+    });
+
+    // Show submission form
+    window.showSubmissionForm = function(assignmentId) {
+        const form = document.getElementById('submit-assignment-form');
+        if (form && userRole === 'student') {
+            form.dataset.assignmentId = assignmentId;
+            const submissionsSection = document.getElementById('submissions-section');
+            if (submissionsSection) submissionsSection.classList.add('hidden');
+            const modal = document.getElementById('submit-assignment-modal');
+            if (modal) modal.classList.remove('hidden');
+        } else {
+            console.error('Submit assignment form not found or user is not a student');
+            showFeedback('Failed to open submission form', 'error');
+        }
+    }
+
+    // Submit assignment form submission
+    document.getElementById('submit-assignment-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (userRole !== 'student') {
+            showFeedback('Only students can submit assignments', 'error');
+            return;
+        }
+        const formData = new FormData(e.target);
+        const assignmentId = e.target.dataset.assignmentId;
+        formData.append('assignment', assignmentId);
+        const content = formData.get('content')?.trim();
+        if (!content) {
+            showFeedback('Submission content is required', 'error');
+            return;
+        }
+        const file = formData.get('file');
+        if (file && !validateFile(file)) return;
+        try {
+            const response = await fetch('/api/submissions/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: formData
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || `Failed to submit assignment: ${response.status}`);
+            }
+            e.target.reset();
+            const modal = document.getElementById('submit-assignment-modal');
+            if (modal) modal.classList.add('hidden');
+            showFeedback('Assignment submitted successfully');
+            fetchAssignments(assignmentId, 'classroom-assignments');
+            fetchAssignments(assignmentId, 'classroom-assignments-list');
+        } catch (error) {
+            console.error('Submit assignment error:', error);
+            showFeedback(error.message, 'error');
+        }
+    });
+
+    // Show grade submission form
+    window.showGradeSubmission = function(submissionId) {
+        const form = document.getElementById('grade-submission-form');
+        if (form && userRole === 'teacher') {
+            form.dataset.submissionId = submissionId;
+            const modal = document.getElementById('grade-submission-modal');
+            if (modal) modal.classList.remove('hidden');
+        } else {
+            console.error('Grade submission form not found or user is not a teacher');
+            showFeedback('Failed to open grade submission form', 'error');
+        }
+    }
+
+    // Grade submission
+    document.getElementById('grade-submission-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (userRole !== 'teacher') {
+            showFeedback('Only teachers can grade submissions', 'error');
+            return;
+        }
+        const formData = new FormData(e.target);
+        const submissionId = e.target.dataset.submissionId;
+        const grade = parseFloat(formData.get('grade'));
+        if (isNaN(grade) || grade < 0) {
+            showFeedback('Grade must be a non-negative number', 'error');
+            return;
+        }
+        const data = {
+            grade,
+            feedback: formData.get('feedback')?.trim() || ''
+        };
+        try {
+            const response = await fetch(`/api/submissions/${submissionId}/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || `Failed to grade submission: ${response.status}`);
+            }
+            e.target.reset();
+            const modal = document.getElementById('grade-submission-modal');
+            if (modal) modal.classList.add('hidden');
+            showFeedback('Submission graded successfully');
+            const assignmentId = document.getElementById('assignment-submissions')?.dataset.assignmentId ||
+                               document.getElementById('classroom-submissions')?.dataset.assignmentId;
+            if (assignmentId) {
+                fetchSubmissions(assignmentId, 'assignment-submissions');
+                fetchSubmissions(assignmentId, 'classroom-submissions');
+            }
+        } catch (error) {
+            console.error('Grade submission error:', error);
+            showFeedback(error.message, 'error');
+        }
+    });
+
+    // View submissions
+    window.viewSubmissions = async function(assignmentId, containerId) {
+        try {
+            if (!assignmentId) throw new Error('Invalid assignment ID');
+            const assignmentsContainer = document.getElementById(containerId);
+            const submissionsContainer = containerId === 'classroom-assignments' ? 'classroom-submissions' : 'assignment-submissions';
+            const targetContainer = document.getElementById(submissionsContainer);
+            if (!assignmentsContainer || !targetContainer) {
+                throw new Error(`Container not found: ${containerId} or ${submissionsContainer}`);
+            }
+            assignmentsContainer.dataset.assignmentId = assignmentId;
+            targetContainer.dataset.assignmentId = assignmentId;
+            const submitModal = document.getElementById('submit-assignment-modal');
+            if (submitModal) submitModal.classList.add('hidden');
+            await fetchSubmissions(assignmentId, submissionsContainer);
+        } catch (error) {
+            console.error('View submissions error:', error);
+            showFeedback(`Failed to load submissions: ${error.message}`, 'error');
+        }
+    }
+
+    // Show note modal
+    window.showNoteModal = function(title, content, file) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40';
+        modal.role = 'dialog';
+        modal.ariaLabel = 'Note Details';
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">${title}</h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">${content}</p>
+                ${file ? `
+                    <a href="${file}" target="_blank" class="text-blue-600 hover:underline mb-4 block">View File</a>
+                    <a href="${file}" download class="text-blue-600 hover:underline mb-4 block">Download</a>
+                ` : ''}
+                <div class="flex justify-end">
+                    <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // Navigation
+    function switchView(viewId) {
+        const validViews = ['dashboard', 'my-classrooms', 'classroom-detail', 'assignments'];
+        if (!validViews.includes(viewId)) {
+            console.error(`Invalid view ID: ${viewId}`);
+            showFeedback('Invalid navigation request', 'error');
+            return;
+        }
+
+        document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
+        const targetView = document.getElementById(`${viewId}-view`);
+        if (targetView) {
+            targetView.classList.remove('hidden');
+        } else {
+            console.error(`View ${viewId}-view not found`);
+            showFeedback(`View ${viewId} not found`, 'error');
+            return;
+        }
+
+        document.querySelectorAll('nav a').forEach(a => a.classList.remove('active-nav', 'bg-blue-100', 'dark:bg-blue-700', 'text-blue-600', 'dark:text-blue-300'));
+        const activeLink = document.querySelector(`nav a[data-view="${viewId}"]`);
+        if (activeLink) {
+            activeLink.classList.add('active-nav', 'bg-blue-100', 'dark:bg-blue-700', 'text-blue-600', 'dark:text-blue-300');
+        }
+
+        if (viewId === 'my-classrooms') {
+            fetchClassrooms('my-classrooms');
+        } else if (viewId === 'dashboard') {
+            fetchClassrooms('recent-classrooms');
+            fetchNotes(null, 'recent-notes');
+        } else if (viewId === 'assignments') {
+            fetchClassrooms('assignment-classrooms');
+            const assignmentsList = document.getElementById('assignments-list');
+            const submissionsList = document.getElementById('submissions-list');
+            if (assignmentsList) assignmentsList.classList.add('hidden');
+            if (submissionsList) submissionsList.classList.add('hidden');
+        }
+    }
+
+    // Create classroom button
+    document.getElementById('create-classroom-button')?.addEventListener('click', () => {
+        if (userRole === 'teacher') {
+            const form = document.getElementById('create-classroom-form');
+            if (form) {
+                form.reset();
+                form.removeAttribute('data-id');
+                const modal = document.getElementById('create-classroom-modal');
+                if (modal) modal.classList.remove('hidden');
+            } else {
+                console.error('Create classroom form not found');
+                showFeedback('Failed to open create classroom form', 'error');
+            }
+        } else {
+            showFeedback('Only teachers can create classrooms', 'error');
+        }
+    });
+
+    // Navigation links
+    document.querySelectorAll('nav a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView(link.dataset.view);
+        });
+    });
+
+    // Modal cancel buttons
+    function closeModal(modalId, view = 'dashboard') {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+            switchView(view);
+        }
+    }
+
+    document.getElementById('cancel-create-classroom')?.addEventListener('click', () => closeModal('create-classroom-modal', 'dashboard'));
+    document.getElementById('cancel-create-note')?.addEventListener('click', () => closeModal('create-note-modal', 'classroom-detail'));
+    document.getElementById('cancel-create-assignment')?.addEventListener('click', () => closeModal('create-assignment-modal', 'classroom-detail'));
+    document.getElementById('cancel-submit-assignment')?.addEventListener('click', () => closeModal('submit-assignment-modal', 'classroom-detail'));
+    document.getElementById('cancel-grade-submission')?.addEventListener('click', () => closeModal('grade-submission-modal', 'classroom-detail'));
+
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    document.getElementById('mobile-sidebar-toggle')?.addEventListener('click', () => {
+        if (sidebar) sidebar.classList.toggle('-translate-x-full');
+    });
+    document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+        if (sidebar) sidebar.classList.toggle('-translate-x-full');
+    });
+
+    // Teacher-specific buttons
+    function addTeacherButtons() {
+        if (userRole === 'teacher') {
+            const notesSection = document.getElementById('classroom-notes')?.parentElement;
+            const assignmentsSection = document.getElementById('classroom-assignments')?.parentElement;
+            if (!notesSection || !assignmentsSection) {
+                console.error('Notes or assignments section not found');
+                return;
+            }
+            const postNoteButton = document.createElement('button');
+            postNoteButton.textContent = 'Post Note';
+            postNoteButton.className = 'mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700';
+            postNoteButton.addEventListener('click', () => {
+                const form = document.getElementById('create-note-form');
+                if (form) {
+                    form.reset();
+                    const modal = document.getElementById('create-note-modal');
+                    if (modal) modal.classList.remove('hidden');
+                } else {
+                    console.error('Create note form not found');
+                    showFeedback('Failed to open note form', 'error');
+                }
+            });
+            notesSection.insertBefore(postNoteButton, document.getElementById('classroom-notes'));
+
+            const createAssignmentButton = document.createElement('button');
+            createAssignmentButton.textContent = 'Create Assignment';
+            createAssignmentButton.className = 'mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700';
+            createAssignmentButton.addEventListener('click', () => {
+                const form = document.getElementById('create-assignment-form');
+                if (form) {
+                    form.reset();
+                    const modal = document.getElementById('create-assignment-modal');
+                    if (modal) modal.classList.remove('hidden');
+                } else {
+                    console.error('Create assignment form not found');
+                    showFeedback('Failed to open assignment form', 'error');
+                }
+            });
+            assignmentsSection.insertBefore(createAssignmentButton, document.getElementById('classroom-assignments'));
+        }
+    }
+
+    // Initialize
+    fetchProfile().then(addTeacherButtons).then(() => switchView('dashboard'));
+});
+</script>
+{% else %}
+    <script>window.location.href = '/login/';</script>
+{% endif %}
+{% endblock content %}
