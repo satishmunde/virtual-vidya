@@ -86,8 +86,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 // Store token and redirect
-                localStorage.setItem('token', result.token);
-                window.location.href = '/profile/';
+    
+                window.location.href = '/login/';
             } else {
                 // Display errors
                 errorMessages.classList.remove('hidden');

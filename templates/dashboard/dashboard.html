@@ -6,58 +6,88 @@ Dashboard | Virtual Vidya
 {% endblock title %}
 
 {% block content %}
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes slide-in {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slide-out {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.3s ease-out;
+    }
+    .animate-slide-in {
+        animation: slide-in 0.3s ease-out;
+    }
+    .animate-slide-out {
+        animation: slide-out 0.3s ease-out;
+    }
+</style>
+
 {% if user.is_authenticated %}
-<div class="flex h-screen bg-gray-100 dark:bg-gray-900">
+<div class="flex h-screen bg-gray-100 dark:bg-gray-900 font-sans">
     <!-- Sidebar -->
     <div id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-30">
-        <div class="p-4 flex items-center justify-between">
+        <div class="p-6 flex items-center justify-between">
             <a href="/" class="flex items-center">
-                <img src="https://flowbite.com/docs/images/logo.svg" alt="logo" class="w-8 h-8 mr-2">
+                <img src="https://flowbite.com/docs/images/logo.svg" alt="Virtual Vidya Logo" class="w-8 h-8 mr-2">
                 <span class="text-xl font-semibold text-gray-900 dark:text-white">Virtual Vidya</span>
             </a>
-            <button id="sidebar-toggle" class="md:hidden text-gray-500 dark:text-gray-300">
+            <button id="sidebar-toggle" class="md:hidden text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
             </button>
         </div>
         <nav class="mt-4">
-            <a href="#" data-view="dashboard" class="block py-2 px-4 text-gray-700 dark:text-gray-200 bg-blue-100 dark:bg-blue-700 text-blue-600 dark:text-blue-300 font-medium active-nav">Dashboard</a>
-            <a href="#" data-view="my-classrooms" class="block py-2 px-4 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-600 hover:text-blue-600 dark:hover:text-blue-300">My Classrooms</a>
-            <a href="#" data-view="assignments" class="block py-2 px-4 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-600 hover:text-blue-600 dark:hover:text-blue-300">Assignments</a>
+            <a href="#" data-view="dashboard" class="block py-2.5 px-4 text-base font-medium text-gray-700 dark:text-gray-200 bg-blue-100 dark:bg-blue-700 text-blue-600 dark:text-blue-200 rounded-lg mx-2 transition-colors">Dashboard</a>
+            <a href="#" data-view="my-classrooms" class="block py-2.5 px-4 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-600 hover:text-blue-600 dark:hover:text-blue-200 rounded-lg mx-2 transition-colors">My Classrooms</a>
+            <a href="#" data-view="assignments" class="block py-2.5 px-4 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-600 hover:text-blue-600 dark:hover:text-blue-200 rounded-lg mx-2 transition-colors">Assignments</a>
+            {% if user.user_type == 'student' %}
+                <a href="#" data-view="join-classroom" class="block py-2.5 px-4 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-600 hover:text-blue-600 dark:hover:text-blue-200 rounded-lg mx-2 transition-colors">Join Classroom</a>
+            {% endif %}
         </nav>
     </div>
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col md:ml-64">
         <!-- Header -->
-        <header class="bg-white dark:bg-gray-800 shadow p-4 flex items-center justify-between">
-            <button id="mobile-sidebar-toggle" class="md:hidden text-gray-500 dark:text-gray-300">
+        <header class="bg-white dark:bg-gray-800 shadow px-6 py-4 flex items-center justify-between">
+            <button id="mobile-sidebar-toggle" class="md:hidden text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
             </button>
-            <div class="flex items-center">
-                <img id="profile-picture" src="" alt="Profile" class="w-10 h-10 rounded-full mr-2 hidden" aria-hidden="true">
-                <span id="user-name" class="text-gray-900 dark:text-white font-medium"></span>
+            <div class="flex items-center space-x-4">
+                <img id="profile-picture" src="" alt="Profile" class="w-10 h-10 rounded-full hidden" aria-hidden="true">
+                <span id="user-name" class="text-base font-medium text-gray-900 dark:text-white"></span>
             </div>
-            <form action="{% url 'logout' %}" method="POST">
-                {% csrf_token %}
-                <button type="submit" id="logout" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Logout</button>
-            </form>
+            <div class="flex items-center space-x-4">
+               
+                <form action="{% url 'logout' %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" id="logout" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors active:scale-95">Logout</button>
+                </form>
+            </div>
         </header>
 
         <!-- Content Area -->
         <main class="flex-1 p-6 overflow-y-auto">
             <!-- Feedback Messages -->
-            <div id="feedback" class="hidden fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white"></div>
+            <div id="feedback" class="hidden fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white cursor-pointer" onclick="this.classList.add('animate-slide-out'); setTimeout(() => this.classList.add('hidden'), 300);"></div>
 
             <!-- Dashboard View -->
             <div id="dashboard-view" class="view">
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Welcome to Your Dashboard</h1>
-                <p id="welcome-message" class="text-gray-600 dark:text-gray-300 mb-6"></p>
+                <p id="welcome-message" class="text-base text-gray-600 dark:text-gray-300 mb-6"></p>
                 {% if user.user_type == 'teacher' %}
-                    <button id="create-classroom-button" class="mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create New Classroom</button>
+                    <button id="create-classroom-button" class="mb-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors active:scale-95">Create New Classroom</button>
                 {% endif %}
                 <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Classrooms</h2>
                 <div id="recent-classrooms" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"></div>
@@ -72,47 +102,67 @@ Dashboard | Virtual Vidya
             </div>
 
             <!-- Create Classroom Modal -->
-            <div id="create-classroom-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40" role="dialog" aria-labelledby="create-classroom-title">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+            <div id="create-classroom-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40 animate-fade-in" role="dialog" aria-labelledby="create-classroom-title">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl max-w-lg w-full shadow-2xl">
                     <h2 id="create-classroom-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Create Classroom</h2>
-                    <form id="create-classroom-form" class="space-y-4">
+                    <form id="create-classroom-form" class="space-y-6">
                         {% csrf_token %}
                         <div>
                             <label for="classroom-name" class="block text-sm font-medium text-gray-900 dark:text-white">Classroom Name</label>
-                            <input type="text" id="classroom-name" name="name" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required minlength="3" maxlength="100" aria-required="true">
+                            <input type="text" id="classroom-name" name="name" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" required minlength="3" maxlength="100" aria-required="true">
                         </div>
                         <div>
                             <label for="classroom-description" class="block text-sm font-medium text-gray-900 dark:text-white">Description</label>
-                            <textarea id="classroom-description" name="description" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" maxlength="500"></textarea>
+                            <textarea id="classroom-description" name="description" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" maxlength="500"></textarea>
                         </div>
-                        <div class="flex justify-end space-x-2">
-                            <button type="button" id="cancel-create-classroom" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancel-create-classroom" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 focus:ring-2 focus:ring-gray-500 transition-colors active:scale-95">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors active:scale-95">Save</button>
                         </div>
                     </form>
                 </div>
             </div>
 
+            <!-- Join Classroom Modal -->
+            {% if user.user_type == 'student' %}
+                <div id="join-classroom-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40 animate-fade-in" role="dialog" aria-labelledby="join-classroom-title">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl max-w-lg w-full shadow-2xl">
+                        <h2 id="join-classroom-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Join Classroom</h2>
+                        <form id="join-classroom-form" class="space-y-6">
+                            {% csrf_token %}
+                            <div>
+                                <label for="classroom-code" class="block text-sm font-medium text-gray-900 dark:text-white">Classroom Code</label>
+                                <input type="text" id="classroom-code" name="code" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" required maxlength="50" aria-required="true">
+                            </div>
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" id="cancel-join-classroom" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 focus:ring-2 focus:ring-gray-500 transition-colors active:scale-95">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors active:scale-95">Join</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+
             <!-- Classroom Detail View -->
             <div id="classroom-detail-view" class="view hidden">
                 <h1 id="classroom-title" class="text-2xl font-bold text-gray-900 dark:text-white mb-4"></h1>
-                <p id="classroom-description" class="text-gray-600 dark:text-gray-300 mb-4"></p>
+                <p id="classroom-description" class="text-base text-gray-600 dark:text-gray-300 mb-6"></p>
                 <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Notes</h2>
                 <div id="classroom-notes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"></div>
                 {% if user.user_type == 'teacher' %}
                     <!-- Create Note Modal -->
-                    <div id="create-note-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40" role="dialog" aria-labelledby="create-note-title">
-                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+                    <div id="create-note-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40 animate-fade-in" role="dialog" aria-labelledby="create-note-title">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl max-w-lg w-full shadow-2xl">
                             <h2 id="create-note-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Post Note</h2>
-                            <form id="create-note-form" class="space-y-4">
+                            <form id="create-note-form" class="space-y-6">
                                 {% csrf_token %}
                                 <div>
                                     <label for="note-title" class="block text-sm font-medium text-gray-900 dark:text-white">Note Title</label>
-                                    <input type="text" id="note-title" name="title" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required minlength="1" maxlength="100" aria-required="true">
+                                    <input type="text" id="note-title" name="title" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" required minlength="1" maxlength="100" aria-required="true">
                                 </div>
                                 <div>
                                     <label for="note-content" class="block text-sm font-medium text-gray-900 dark:text-white">Content</label>
-                                    <textarea id="note-content" name="content" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required maxlength="2000" aria-required="true"></textarea>
+                                    <textarea id="note-content" name="content" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" required maxlength="2000" aria-required="true"></textarea>
                                 </div>
                                 <div>
                                     <label for="note-file" class="block text-sm font-medium text-gray-900 dark:text-white">Upload File (Optional, max 5MB)</label>
@@ -120,14 +170,14 @@ Dashboard | Virtual Vidya
                                 </div>
                                 <div>
                                     <label for="note-public" class="block text-sm font-medium text-gray-900 dark:text-white">Visibility</label>
-                                    <select id="note-public" name="is_public" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <select id="note-public" name="is_public" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500">
                                         <option value="true">Public</option>
                                         <option value="false">Private</option>
                                     </select>
                                 </div>
-                                <div class="flex justify-end space-x-2">
-                                    <button type="button" id="cancel-create-note" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Post</button>
+                                <div class="flex justify-end space-x-3">
+                                    <button type="button" id="cancel-create-note" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 focus:ring-2 focus:ring-gray-500 transition-colors active:scale-95">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors active:scale-95">Post</button>
                                 </div>
                             </form>
                         </div>
@@ -137,30 +187,30 @@ Dashboard | Virtual Vidya
                 <div id="classroom-assignments" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"></div>
                 {% if user.user_type == 'teacher' %}
                     <!-- Create Assignment Modal -->
-                    <div id="create-assignment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40" role="dialog" aria-labelledby="create-assignment-title">
-                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+                    <div id="create-assignment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40 animate-fade-in" role="dialog" aria-labelledby="create-assignment-title">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl max-w-lg w-full shadow-2xl">
                             <h2 id="create-assignment-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Create Assignment</h2>
-                            <form id="create-assignment-form" class="space-y-4">
+                            <form id="create-assignment-form" class="space-y-6">
                                 {% csrf_token %}
                                 <div>
                                     <label for="assignment-title" class="block text-sm font-medium text-gray-900 dark:text-white">Assignment Title</label>
-                                    <input type="text" id="assignment-title" name="title" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required minlength="1" maxlength="100" aria-required="true">
+                                    <input type="text" id="assignment-title" name="title" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" required minlength="1" maxlength="100" aria-required="true">
                                 </div>
                                 <div>
                                     <label for="assignment-description" class="block text-sm font-medium text-gray-900 dark:text-white">Description</label>
-                                    <textarea id="assignment-description" name="description" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required maxlength="2000" aria-required="true"></textarea>
+                                    <textarea id="assignment-description" name="description" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" required maxlength="2000" aria-required="true"></textarea>
                                 </div>
                                 <div>
                                     <label for="assignment-due-date" class="block text-sm font-medium text-gray-900 dark:text-white">Due Date</label>
-                                    <input type="datetime-local" id="assignment-due-date" name="due_date" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required aria-required="true">
+                                    <input type="datetime-local" id="assignment-due-date" name="due_date" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" required aria-required="true">
                                 </div>
                                 <div>
                                     <label for="assignment-max-points" class="block text-sm font-medium text-gray-900 dark:text-white">Max Points</label>
-                                    <input type="number" id="assignment-max-points" name="max_points" min="1" max="1000" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required aria-required="true">
+                                    <input type="number" id="assignment-max-points" name="max_points" min="1" max="1000" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" required aria-required="true">
                                 </div>
-                                <div class="flex justify-end space-x-2">
-                                    <button type="button" id="cancel-create-assignment" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create</button>
+                                <div class="flex justify-end space-x-3">
+                                    <button type="button" id="cancel-create-assignment" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 focus:ring-2 focus:ring-gray-500 transition-colors active:scale-95">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors active:scale-95">Create</button>
                                 </div>
                             </form>
                         </div>
@@ -172,22 +222,22 @@ Dashboard | Virtual Vidya
                 </div>
                 {% if user.user_type == 'student' %}
                     <!-- Submit Assignment Modal -->
-                    <div id="submit-assignment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40" role="dialog" aria-labelledby="submit-assignment-title">
-                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+                    <div id="submit-assignment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40 animate-fade-in" role="dialog" aria-labelledby="submit-assignment-title">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl max-w-lg w-full shadow-2xl">
                             <h2 id="submit-assignment-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Submit Assignment</h2>
-                            <form id="submit-assignment-form" class="space-y-4">
+                            <form id="submit-assignment-form" class="space-y-6">
                                 {% csrf_token %}
                                 <div>
                                     <label for="submission-content" class="block text-sm font-medium text-gray-900 dark:text-white">Submission Content</label>
-                                    <textarea id="submission-content" name="content" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required maxlength="2000" aria-required="true"></textarea>
+                                    <textarea id="submission-content" name="content" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" required maxlength="2000" aria-required="true"></textarea>
                                 </div>
                                 <div>
                                     <label for="submission-file" class="block text-sm font-medium text-gray-900 dark:text-white">Upload File (Optional, max 5MB)</label>
                                     <input type="file" id="submission-file" name="file" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" accept=".pdf,.doc,.docx,.txt">
                                 </div>
-                                <div class="flex justify-end space-x-2">
-                                    <button type="button" id="cancel-submit-assignment" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Submit</button>
+                                <div class="flex justify-end space-x-3">
+                                    <button type="button" id="cancel-submit-assignment" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 focus:ring-2 focus:ring-gray-500 transition-colors active:scale-95">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors active:scale-95">Submit</button>
                                 </div>
                             </form>
                         </div>
@@ -195,22 +245,22 @@ Dashboard | Virtual Vidya
                 {% endif %}
                 {% if user.user_type == 'teacher' %}
                     <!-- Grade Submission Modal -->
-                    <div id="grade-submission-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40" role="dialog" aria-labelledby="grade-submission-title">
-                        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+                    <div id="grade-submission-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-40 animate-fade-in" role="dialog" aria-labelledby="grade-submission-title">
+                        <div class="bg-white dark:bg-gray-800 p-6 rounded-xl max-w-lg w-full shadow-2xl">
                             <h2 id="grade-submission-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Grade Submission</h2>
-                            <form id="grade-submission-form" class="space-y-4">
+                            <form id="grade-submission-form" class="space-y-6">
                                 {% csrf_token %}
                                 <div>
                                     <label for="submission-grade" class="block text-sm font-medium text-gray-900 dark:text-white">Grade</label>
-                                    <input type="number" id="submission-grade" name="grade" min="0" step="0.1" max="1000" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required aria-required="true">
+                                    <input type="number" id="submission-grade" name="grade" min="0" step="0.1" max="1000" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" required aria-required="true">
                                 </div>
                                 <div>
                                     <label for="submission-feedback" class="block text-sm font-medium text-gray-900 dark:text-white">Feedback (Optional)</label>
-                                    <textarea id="submission-feedback" name="feedback" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" maxlength="2000"></textarea>
+                                    <textarea id="submission-feedback" name="feedback" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500" maxlength="2000"></textarea>
                                 </div>
-                                <div class="flex justify-end space-x-2">
-                                    <button type="button" id="cancel-grade-submission" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Submit Grade</button>
+                                <div class="flex justify-end space-x-3">
+                                    <button type="button" id="cancel-grade-submission" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 focus:ring-2 focus:ring-gray-500 transition-colors active:scale-95">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors active:scale-95">Submit Grade</button>
                                 </div>
                             </form>
                         </div>
@@ -240,6 +290,31 @@ Dashboard | Virtual Vidya
 document.addEventListener('DOMContentLoaded', () => {
     let userRole = '';
 
+    // Theme initialization
+    function initializeTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        updateThemeIcon(theme);
+    }
+
+    function updateThemeIcon(theme) {
+        const themeIcon = document.getElementById('theme-icon');
+        if (themeIcon) {
+            themeIcon.innerHTML = theme === 'dark' ?
+                `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />` :
+                `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />`;
+        }
+    }
+
+    function toggleTheme() {
+        const isDark = !document.documentElement.classList.contains('dark');
+        document.documentElement.classList.toggle('dark', isDark);
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        updateThemeIcon(isDark ? 'dark' : 'light');
+    }
+
     // Get CSRF token from cookie
     function getCookie(name) {
         let cookieValue = null;
@@ -261,9 +336,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const feedback = document.getElementById('feedback');
         if (feedback) {
             feedback.textContent = message;
-            feedback.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
-            feedback.classList.remove('hidden');
-            setTimeout(() => feedback.classList.add('hidden'), 3000);
+            feedback.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white cursor-pointer animate-slide-in ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            feedback.classList.remove('hidden', 'animate-slide-out');
+            setTimeout(() => {
+                feedback.classList.add('animate-slide-out');
+                setTimeout(() => feedback.classList.add('hidden'), 300);
+            }, 3000);
         } else {
             console.error('Feedback element not found');
         }
@@ -325,10 +403,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             container.innerHTML = classrooms.length ? classrooms.map(classroom => `
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 border border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${classroom.name}</h3>
-                    <p class="text-gray-600 dark:text-gray-300">Code: ${classroom.code}</p>
-                    <p class="text-gray-600 dark:text-gray-300">Teacher: ${classroom.teacher.first_name} ${classroom.teacher.last_name}</p>
+                    <p class="text-base text-gray-600 dark:text-gray-300">Code: ${classroom.code}</p>
+                    <p class="text-base text-gray-600 dark:text-gray-300">Teacher: ${classroom.teacher.first_name} ${classroom.teacher.last_name}</p>
                     <div class="mt-4 flex space-x-3">
                         <button onclick="viewClassroom(${classroom.id})" class="text-blue-600 hover:underline font-medium">View</button>
                         ${containerId === 'assignment-classrooms' ? `
@@ -340,13 +418,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         ` : ''}
                     </div>
                 </div>
-            `).join('') : '<p class="text-gray-600 dark:text-gray-300">No classrooms found.</p>';
+            `).join('') : '<p class="text-base text-gray-600 dark:text-gray-300">No classrooms found.</p>';
         } catch (error) {
             console.error('Classrooms fetch error:', error);
             showFeedback('Failed to load classrooms', 'error');
             const container = document.getElementById(containerId);
             if (container) {
-                container.innerHTML = '<p class="text-gray-600 dark:text-gray-300">Failed to load classrooms.</p>';
+                container.innerHTML = '<p class="text-base text-gray-600 dark:text-gray-300">Failed to load classrooms.</p>';
             }
         }
     }
@@ -366,25 +444,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             container.innerHTML = notes.length ? notes.map(note => `
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 border border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${note.title}</h3>
-                    <p class="text-gray-600 dark:text-gray-300 truncate">${note.content}</p>
+                    <p class="text-base text-gray-600 dark:text-gray-300 truncate">${note.content}</p>
                     <p class="text-sm text-gray-500 dark:text-gray-400">${new Date(note.created_at).toLocaleDateString()}</p>
                     ${note.file ? `
-                        <a href="${note.file}" target="_blank" class="text-blue-600 hover:underline mr-2">View File</a>
-                        <a href="${note.file}" download class="text-blue-600 hover:underline">Download</a>
+                        <div class="mt-2 space-x-2">
+                            <a href="${note.file}" target="_blank" class="text-blue-600 hover:underline">View File</a>
+                            <a href="${note.file}" download class="text-blue-600 hover:underline">Download</a>
+                        </div>
                     ` : ''}
                     <div class="mt-4">
                         <button onclick="showNoteModal('${note.title}', '${note.content.replace(/'/g, "\\'")}', '${note.file || ''}')" class="text-blue-600 hover:underline font-medium">View</button>
                     </div>
                 </div>
-            `).join('') : '<p class="text-gray-600 dark:text-gray-300">No notes available.</p>';
+            `).join('') : '<p class="text-base text-gray-600 dark:text-gray-300">No notes available.</p>';
         } catch (error) {
             console.error('Notes fetch error:', error);
             showFeedback('Failed to load notes', 'error');
             const container = document.getElementById(containerId);
             if (container) {
-                container.innerHTML = '<p class="text-gray-600 dark:text-gray-300">Failed to load notes.</p>';
+                container.innerHTML = '<p class="text-base text-gray-600 dark:text-gray-300">Failed to load notes.</p>';
             }
         }
     }
@@ -406,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             container.innerHTML = ''; // Clear container before rendering
             if (!assignments.length) {
-                container.innerHTML = '<p class="text-gray-600 dark:text-gray-300">No assignments available.</p>';
+                container.innerHTML = '<p class="text-base text-gray-600 dark:text-gray-300">No assignments available.</p>';
                 return;
             }
 
@@ -416,19 +496,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     const submission = await fetchStudentSubmission(assignment.id);
                     if (submission) {
                         submissionHtml = `
-                            <div class="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
-                                <p class="text-sm text-gray-600 dark:text-gray-300">Your Submission:</p>
+                            <div class="mt-3 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Your Submission:</p>
                                 <p class="text-sm text-gray-600 dark:text-gray-300 truncate">${submission.content}</p>
-                                ${submission.file ? `<a href="${submission.file}" target="_blank" class="text-blue-600 hover:underline">View File</a>` : ''}
-                                <button onclick="deleteSubmission(${submission.id}, ${assignment.id}, '${containerId}')" class="text-red-600 hover:underline font-medium ml-2">Delete Submission</button>
+                                ${submission.file ? `<a href="${submission.file}" target="_blank" class="text-blue-600 hover:underline text-sm">View File</a>` : ''}
+                                <button onclick="deleteSubmission(${submission.id}, ${assignment.id}, '${containerId}')" class="text-red-600 hover:underline text-sm font-medium ml-2">Delete Submission</button>
                             </div>
                         `;
                     }
                 }
                 return `
-                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${assignment.title}</h3>
-                        <p class="text-gray-600 dark:text-gray-300 truncate">${assignment.description}</p>
+                        <p class="text-base text-gray-600 dark:text-gray-300 truncate">${assignment.description}</p>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Due: ${new Date(assignment.due_date).toLocaleString()}</p>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Points: ${assignment.max_points}</p>
                         ${submissionHtml}
@@ -451,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showFeedback(`Failed to load assignments: ${error.message}`, 'error');
             const container = document.getElementById(containerId);
             if (container) {
-                container.innerHTML = '<p class="text-gray-600 dark:text-gray-300">Failed to load assignments.</p>';
+                container.innerHTML = '<p class="text-base text-gray-600 dark:text-gray-300">Failed to load assignments.</p>';
             }
         }
     }
@@ -506,10 +586,10 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = ''; // Clear container before rendering
             container.dataset.assignmentId = assignmentId;
             container.innerHTML = submissions.length ? submissions.map(submission => `
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                    <p class="text-gray-600 dark:text-gray-300">Student: ${submission.student.first_name} ${submission.student.last_name}</p>
-                    <p class="text-gray-600 dark:text-gray-300 truncate">${submission.content}</p>
-                    ${submission.file ? `<a href="${submission.file}" target="_blank" class="text-blue-600 hover:underline">View File</a>` : ''}
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 border border-gray-200 dark:border-gray-700">
+                    <p class="text-base text-gray-600 dark:text-gray-300">Student: ${submission.student.first_name} ${submission.student.last_name}</p>
+                    <p class="text-base text-gray-600 dark:text-gray-300 truncate">${submission.content}</p>
+                    ${submission.file ? `<a href="${submission.file}" target="_blank" class="text-blue-600 hover:underline text-sm">View File</a>` : ''}
                     <p class="text-sm text-gray-500 dark:text-gray-400">Submitted: ${new Date(submission.submitted_at).toLocaleString()}</p>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Grade: ${submission.grade || 'Not graded'}</p>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Feedback: ${submission.feedback || 'None'}</p>
@@ -519,7 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ` : ''}
                     </div>
                 </div>
-            `).join('') : '<p class="text-gray-600 dark:text-gray-300">No submissions available.</p>';
+            `).join('') : '<p class="text-base text-gray-600 dark:text-gray-300">No submissions available.</p>';
 
             if (containerId === 'assignment-submissions') {
                 const submissionsList = document.getElementById('submissions-list');
@@ -533,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showFeedback(`Failed to load submissions: ${error.message}`, 'error');
             const container = document.getElementById(containerId);
             if (container) {
-                container.innerHTML = '<p class="text-gray-600 dark:text-gray-300">Failed to load submissions.</p>';
+                container.innerHTML = '<p class="text-base text-gray-600 dark:text-gray-300">Failed to load submissions.</p>';
             }
         }
     }
@@ -646,6 +726,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Join classroom form submission
+    document.getElementById('join-classroom-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (userRole !== 'student') {
+            showFeedback('Only students can join classrooms', 'error');
+            return;
+        }
+        const formData = new FormData(e.target);
+        const code = formData.get('code')?.trim();
+        if (!code) {
+            showFeedback('Classroom code is required', 'error');
+            return;
+        }
+        const data = { code };
+        try {
+            const response = await fetch('/api/classrooms/join/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || `Failed to join classroom: ${response.status}`);
+            }
+            e.target.reset();
+            const modal = document.getElementById('join-classroom-modal');
+            if (modal) modal.classList.add('hidden');
+            showFeedback('Successfully joined classroom');
+            fetchClassrooms('recent-classrooms');
+            fetchClassrooms('my-classrooms');
+            fetchClassrooms('assignment-classrooms');
+            switchView('dashboard');
+        } catch (error) {
+            console.error('Join classroom error:', error);
+            showFeedback(error.message.includes('Invalid') ? 'Invalid classroom code' : error.message, 'error');
+        }
+    });
+
     // Create classroom form submission
     document.getElementById('create-classroom-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -683,6 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showFeedback('Classroom saved successfully');
             fetchClassrooms('recent-classrooms');
             fetchClassrooms('my-classrooms');
+            fetchClassrooms('assignment-classrooms');
             switchView('dashboard');
         } catch (error) {
             console.error('Save classroom error:', error);
@@ -920,19 +1042,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show note modal
     window.showNoteModal = function(title, content, file) {
         const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 animate-fade-in';
         modal.role = 'dialog';
         modal.ariaLabel = 'Note Details';
         modal.innerHTML = `
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl max-w-lg w-full shadow-2xl">
                 <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">${title}</h2>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">${content}</p>
+                <p class="text-base text-gray-600 dark:text-gray-300 mb-4">${content}</p>
                 ${file ? `
-                    <a href="${file}" target="_blank" class="text-blue-600 hover:underline mb-4 block">View File</a>
-                    <a href="${file}" download class="text-blue-600 hover:underline mb-4 block">Download</a>
+                    <div class="mb-4 space-y-2">
+                        <a href="${file}" target="_blank" class="block text-blue-600 hover:underline">View File</a>
+                        <a href="${file}" download class="block text-blue-600 hover:underline">Download</a>
+                    </div>
                 ` : ''}
                 <div class="flex justify-end">
-                    <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Close</button>
+                    <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 focus:ring-2 focus:ring-gray-500 transition-colors active:scale-95">Close</button>
                 </div>
             </div>
         `;
@@ -941,10 +1065,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Navigation
     function switchView(viewId) {
-        const validViews = ['dashboard', 'my-classrooms', 'classroom-detail', 'assignments'];
+        const validViews = ['dashboard', 'my-classrooms', 'classroom-detail', 'assignments', 'join-classroom'];
         if (!validViews.includes(viewId)) {
             console.error(`Invalid view ID: ${viewId}`);
             showFeedback('Invalid navigation request', 'error');
+            return;
+        }
+
+        if (viewId === 'join-classroom') {
+            if (userRole === 'student') {
+                const modal = document.getElementById('join-classroom-modal');
+                if (modal) {
+                    const form = document.getElementById('join-classroom-form');
+                    if (form) form.reset();
+                    modal.classList.remove('hidden');
+                } else {
+                    console.error('Join classroom modal not found');
+                    showFeedback('Failed to open join classroom form', 'error');
+                }
+            } else {
+                showFeedback('Only students can join classrooms', 'error');
+            }
             return;
         }
 
@@ -952,16 +1093,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetView = document.getElementById(`${viewId}-view`);
         if (targetView) {
             targetView.classList.remove('hidden');
+            targetView.style.opacity = '0';
+            setTimeout(() => targetView.style.opacity = '1', 50); // Fade-in effect
         } else {
             console.error(`View ${viewId}-view not found`);
             showFeedback(`View ${viewId} not found`, 'error');
             return;
         }
 
-        document.querySelectorAll('nav a').forEach(a => a.classList.remove('active-nav', 'bg-blue-100', 'dark:bg-blue-700', 'text-blue-600', 'dark:text-blue-300'));
+        document.querySelectorAll('nav a').forEach(a => a.classList.remove('bg-blue-100', 'dark:bg-blue-700', 'text-blue-600', 'dark:text-blue-200'));
         const activeLink = document.querySelector(`nav a[data-view="${viewId}"]`);
         if (activeLink) {
-            activeLink.classList.add('active-nav', 'bg-blue-100', 'dark:bg-blue-700', 'text-blue-600', 'dark:text-blue-300');
+            activeLink.classList.add('bg-blue-100', 'dark:bg-blue-700', 'text-blue-600', 'dark:text-blue-200');
         }
 
         if (viewId === 'my-classrooms') {
@@ -976,6 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (assignmentsList) assignmentsList.classList.add('hidden');
             if (submissionsList) submissionsList.classList.add('hidden');
         }
+        window.scrollTo(0, 0); // Scroll to top
     }
 
     // Create classroom button
@@ -996,6 +1140,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Theme toggle
+    document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
+
     // Navigation links
     document.querySelectorAll('nav a').forEach(link => {
         link.addEventListener('click', (e) => {
@@ -1014,10 +1161,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('cancel-create-classroom')?.addEventListener('click', () => closeModal('create-classroom-modal', 'dashboard'));
+    document.getElementById('cancel-join-classroom')?.addEventListener('click', () => closeModal('join-classroom-modal', 'dashboard'));
     document.getElementById('cancel-create-note')?.addEventListener('click', () => closeModal('create-note-modal', 'classroom-detail'));
     document.getElementById('cancel-create-assignment')?.addEventListener('click', () => closeModal('create-assignment-modal', 'classroom-detail'));
     document.getElementById('cancel-submit-assignment')?.addEventListener('click', () => closeModal('submit-assignment-modal', 'classroom-detail'));
     document.getElementById('cancel-grade-submission')?.addEventListener('click', () => closeModal('grade-submission-modal', 'classroom-detail'));
+
+    // Close modals on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.fixed:not(.hidden)').forEach(modal => {
+                modal.classList.add('hidden');
+            });
+        }
+    });
 
     // Sidebar toggle
     const sidebar = document.getElementById('sidebar');
@@ -1025,57 +1182,55 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sidebar) sidebar.classList.toggle('-translate-x-full');
     });
     document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
-        if (sidebar) sidebar.classList.toggle('-translate-x-full');
+        if (sidebar) sidebar.classList.add('-translate-x-full');
     });
 
-    // Teacher-specific buttons
-    function addTeacherButtons() {
-        if (userRole === 'teacher') {
-            const notesSection = document.getElementById('classroom-notes')?.parentElement;
-            const assignmentsSection = document.getElementById('classroom-assignments')?.parentElement;
-            if (!notesSection || !assignmentsSection) {
-                console.error('Notes or assignments section not found');
-                return;
-            }
-            const postNoteButton = document.createElement('button');
-            postNoteButton.textContent = 'Post Note';
-            postNoteButton.className = 'mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700';
-            postNoteButton.addEventListener('click', () => {
-                const form = document.getElementById('create-note-form');
-                if (form) {
-                    form.reset();
-                    const modal = document.getElementById('create-note-modal');
-                    if (modal) modal.classList.remove('hidden');
-                } else {
-                    console.error('Create note form not found');
-                    showFeedback('Failed to open note form', 'error');
-                }
-            });
-            notesSection.insertBefore(postNoteButton, document.getElementById('classroom-notes'));
+    // Focus trapping for modals
+    function trapFocus(modal) {
+        const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        const firstFocusable = focusableElements[0];
+        const lastFocusable = focusableElements[focusableElements.length - 1];
 
-            const createAssignmentButton = document.createElement('button');
-            createAssignmentButton.textContent = 'Create Assignment';
-            createAssignmentButton.className = 'mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700';
-            createAssignmentButton.addEventListener('click', () => {
-                const form = document.getElementById('create-assignment-form');
-                if (form) {
-                    form.reset();
-                    const modal = document.getElementById('create-assignment-modal');
-                    if (modal) modal.classList.remove('hidden');
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                if (e.shiftKey) {
+                    if (document.activeElement === firstFocusable) {
+                        e.preventDefault();
+                        lastFocusable.focus();
+                    }
                 } else {
-                    console.error('Create assignment form not found');
-                    showFeedback('Failed to open assignment form', 'error');
+                    if (document.activeElement === lastFocusable) {
+                        e.preventDefault();
+                        firstFocusable.focus();
+                    }
                 }
-            });
-            assignmentsSection.insertBefore(createAssignmentButton, document.getElementById('classroom-assignments'));
-        }
+            }
+        });
     }
 
+    // Apply focus trapping to all modals
+    document.querySelectorAll('.fixed[role="dialog"]').forEach(modal => {
+        modal.addEventListener('transitionend', () => {
+            if (!modal.classList.contains('hidden')) {
+                trapFocus(modal);
+                modal.querySelector('input, button, [tabindex="0"]')?.focus();
+            }
+        });
+    });
+
     // Initialize
-    fetchProfile().then(addTeacherButtons).then(() => switchView('dashboard'));
+    initializeTheme();
+    fetchProfile();
+    switchView('dashboard');
 });
 </script>
 {% else %}
-    <script>window.location.href = '/login/';</script>
+<div class="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
+    <div class="text-center">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Please Log In</h1>
+        <p class="text-base text-gray-600 dark:text-gray-300 mb-6">You need to be logged in to access the dashboard.</p>
+        <a href="/login/" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors active:scale-95">Log In</a>
+    </div>
+</div>
 {% endif %}
 {% endblock content %}
