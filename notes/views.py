@@ -16,9 +16,6 @@ class IsStudent(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.user_type == 'student'
 
-
-
-    
 class ClassroomListCreateView(generics.ListCreateAPIView):
     serializer_class = ClassroomSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -47,8 +44,6 @@ class ClassroomJoinView(APIView):
             return Response(ClassroomSerializer(classroom).data)
         except Classroom.DoesNotExist:
             return Response({"detail": "Invalid classroom code."}, status=status.HTTP_404_NOT_FOUND)
-
-
 
 class ClassroomDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Classroom.objects.all()
@@ -140,3 +135,27 @@ class SubmissionDetailView(generics.RetrieveUpdateAPIView):
     def get_queryset(self):
         user = self.request.user
         return Submission.objects.filter(Q(student=user) | Q(assignment__classroom__teacher=user))
+
+    def partial_update(self, request, *args, **kwargs):
+        submission = self.get_object()
+        if request.user.user_type != 'teacher':
+            return Response({"detail": "Only teachers can grade submissions."}, status=status.HTTP_403_FORBIDDEN)
+        
+        grade = request.data.get('grade')
+        feedback = request.data.get('feedback')
+        assignment = submission.assignment
+
+        # Validate grade
+        if grade is not None:
+            try:
+                grade = float(grade)
+                if grade < 0 or grade > assignment.max_points:
+                    return Response({"detail": f"Grade must be between 0 and {assignment.max_points}."}, status=status.HTTP_400_BAD_REQUEST)
+            except (ValueError, TypeError):
+                return Response({"detail": "Invalid grade format."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update submission
+        serializer = self.get_serializer(submission, data={'grade': grade, 'feedback': feedback}, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
